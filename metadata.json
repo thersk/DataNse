@@ -1,0 +1,6 @@
+{
+  "name": "NSE Data Scraper",
+  "description": "A web application for scraping and analyzing National Stock Exchange (NSE) F&O participant-wise open interest data over three consecutive trading days.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
