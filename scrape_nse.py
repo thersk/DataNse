@@ -204,13 +204,18 @@ def main():
         print(json.dumps({"error": f"Invalid date format: {date_input}. Please use DD-MM-YYYY"}))
         sys.exit(1)
         
-    # Get the 3 trading days
-    trading_days = get_trading_days(target_date, 3)
+    # Get candidate trading days (up to 8 trading days back)
+    trading_days = get_trading_days(target_date, 8)
     
     results = []
+    success_count = 0
     for day in trading_days:
         res = scrape_for_date(day)
         results.append(res)
+        if res.get("status") == "success":
+            success_count += 1
+        if success_count >= 3:
+            break
         
     print(json.dumps(results, indent=2))
 
