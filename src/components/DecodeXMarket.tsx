@@ -27,6 +27,7 @@ interface DecodeXMarketProps {
   setSelectedDateStr: (date: string) => void;
   triggerScrape: (date: string) => Promise<boolean>;
   isLoading: boolean;
+  onOpenUploader?: () => void;
 }
 
 interface SavedBiasRecord {
@@ -50,10 +51,48 @@ export default function DecodeXMarket({
   selectedDateStr, 
   setSelectedDateStr, 
   triggerScrape, 
-  isLoading 
+  isLoading,
+  onOpenUploader
 }: DecodeXMarketProps) {
-  // Sort successfully loaded results chronological oldest first, newest last
-  const sortedResults = [...results].filter(r => r.status === "success").reverse();
+  // Combine current results with cached results to ensure 3 days are available whenever possible
+  const getMergedSuccessfulResults = () => {
+    const map = new Map<string, DayScrapeResult>();
+    
+    // First add cached results from localStorage if present
+    try {
+      const cachedRaw = localStorage.getItem("decodex_last_successful_scrape_results");
+      if (cachedRaw) {
+        const parsed: DayScrapeResult[] = JSON.parse(cachedRaw);
+        parsed.filter(r => r.status === "success").forEach(r => {
+          map.set(r.date, r);
+        });
+      }
+    } catch (e) {
+      console.warn("Error reading cached results in DecodeXMarket:", e);
+    }
+
+    // Overlay current active results
+    results.filter(r => r.status === "success").forEach(r => {
+      map.set(r.date, r);
+    });
+
+    const merged = Array.from(map.values());
+    // Sort chronological oldest first, newest last
+    return merged.sort((a, b) => {
+      const parseD = (str: string) => {
+        const parts = str.split("-");
+        if (parts.length === 3) {
+          const monthMap: Record<string, string> = { Jan: "01", Feb: "02", Mar: "03", Apr: "04", May: "05", Jun: "06", Jul: "07", Aug: "08", Sep: "09", Oct: "10", Nov: "11", Dec: "12" };
+          const m = monthMap[parts[1]] || parts[1];
+          return new Date(`${parts[2]}-${m}-${parts[0]}`).getTime();
+        }
+        return 0;
+      };
+      return parseD(a.date) - parseD(b.date);
+    });
+  };
+
+  const sortedResults = getMergedSuccessfulResults();
 
   // We only care about the latest 3 trading days
   const activeResults = sortedResults.slice(-3);
@@ -88,14 +127,34 @@ export default function DecodeXMarket({
 
   if (sortedResults.length < 3) {
     return (
-      <div className="p-12 text-center bg-white border border-gray-100 rounded-2xl shadow-sm max-w-2xl mx-auto space-y-4">
+      <div className="p-8 sm:p-12 text-center bg-white border border-amber-100 rounded-2xl shadow-sm max-w-2xl mx-auto space-y-4">
         <div className="h-12 w-12 bg-amber-50 rounded-full flex items-center justify-center text-amber-500 mx-auto">
           <ShieldAlert className="h-6 w-6" />
         </div>
-        <h3 className="text-base font-bold font-display text-gray-950">Insufficent Dates for DecodeXMarket</h3>
-        <p className="text-xs text-gray-500 leading-relaxed">
-          Decoding full market sentiment matrices requires exactly <strong>3 consecutive trading days</strong> of F&O data (e.g. Thursday, Friday, and Monday). Please select a valid target date or use the manual fallback uploader.
+        <h3 className="text-base font-bold font-display text-gray-950">Preparing 3-Day DecodeXMarket Matrix</h3>
+        <p className="text-xs text-gray-500 leading-relaxed max-w-md mx-auto">
+          Decoding full market sentiment matrices requires <strong>3 consecutive trading days</strong> of F&O participant open interest data. Today's report may not yet be published by NSE (released daily after 10:30 PM IST).
         </p>
+        <div className="pt-2 flex flex-col sm:flex-row items-center justify-center gap-3">
+          <button
+            onClick={() => {
+              // Trigger scrape for selected date (which will now fetch preceding 8 days until 3 are found)
+              triggerScrape(selectedDateStr);
+            }}
+            disabled={isLoading}
+            className="w-full sm:w-auto px-5 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-xs font-semibold shadow-sm transition-all flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50"
+          >
+            {isLoading ? "Fetching 3 Days Data..." : "Fetch Available 3 Trading Days"}
+          </button>
+          {onOpenUploader && (
+            <button
+              onClick={onOpenUploader}
+              className="w-full sm:w-auto px-5 py-2.5 bg-white hover:bg-gray-50 text-gray-700 border border-gray-200 rounded-xl text-xs font-semibold shadow-sm transition-all flex items-center justify-center gap-2 cursor-pointer"
+            >
+              Resilient Manual Data Loader
+            </button>
+          )}
+        </div>
       </div>
     );
   }
@@ -780,18 +839,24 @@ export default function DecodeXMarket({
                   Live automated multi-day flow interpretation matrix computed directly from index future & option swings.
                 </p>
               </div>
-              <span className="text-[10px] font-mono font-bold text-indigo-600 bg-indigo-50 px-2.5 py-1 rounded-md">
-                REAL-TIME SHEETS SYNC
+              <span className="text-[10px] font-mono font-bold text-indigo-600 bg-indigo-50 px-2.5 py-1 rounded-md uppercase tracking-wider">
+                LIVE ANALYTICS MATRIX
               </span>
             </div>
 
             <div className="p-6 flex flex-col lg:flex-row gap-8 items-stretch">
               
               {/* Left Block: View Button and Dynamic Sentiment Indicator */}
-              <div className="lg:w-1/3 flex flex-col justify-center items-center gap-4 bg-gray-50 border border-gray-100 p-6 rounded-2xl text-center">
-                <span className="text-[10px] font-mono font-bold text-gray-400 uppercase tracking-widest">
-                  Market Bias
-                </span>
+              <div className="lg:w-1/3 flex flex-col justify-center items-center gap-3.5 bg-gray-50 border border-gray-100 p-6 rounded-2xl text-center">
+                <div className="flex flex-col items-center gap-1.5">
+                  <span className="text-[10px] font-mono font-bold text-gray-400 uppercase tracking-widest">
+                    Market Bias
+                  </span>
+                  <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-indigo-50 text-indigo-700 border border-indigo-100/80 text-xs font-bold font-mono shadow-xs">
+                    <Calendar className="h-3.5 w-3.5 text-indigo-500" />
+                    <span>Decoded Date: <strong className="text-gray-950 font-extrabold">{d3?.date}</strong></span>
+                  </div>
+                </div>
                 
                 <div className="flex flex-col sm:flex-row lg:flex-col items-center gap-3 w-full justify-center">
                   {/* VIEW Button */}
@@ -805,9 +870,7 @@ export default function DecodeXMarket({
                   </div>
                 </div>
 
-                <p className="text-[11px] text-gray-400 leading-normal max-w-[220px] mt-2">
-                  Aggregated from Smart Money (FII) positions and multi-day derivative trends.
-                </p>
+
 
                 {/* SAVE Button for Manual Entry */}
                 <button
