@@ -14,7 +14,14 @@ import {
   Info,
   Table,
   Clock,
-  CheckCircle2
+  CheckCircle2,
+  Mail,
+  Phone,
+  User,
+  Menu,
+  X,
+  Home,
+  Layers
 } from "lucide-react";
 import { DayScrapeResult, ParticipantRecord } from "./types";
 import { 
@@ -30,6 +37,7 @@ import DashboardCharts from "./components/DashboardCharts";
 import CsvUploader from "./components/CsvUploader";
 import DecodeXMarket from "./components/DecodeXMarket";
 import FiiDiiActivity from "./components/FiiDiiActivity";
+import OptionChain from "./components/OptionChain";
 
 export default function App() {
   // Default query date dynamically initialized to current IST trading date
@@ -62,6 +70,8 @@ export default function App() {
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
   const [isUploaderOpen, setIsUploaderOpen] = useState<boolean>(false);
+  const [mainNav, setMainNav] = useState<"home" | "option-chain">("home");
+  const [isHamburgerOpen, setIsHamburgerOpen] = useState<boolean>(false);
   const [activeTab, setActiveTab] = useState<"dashboard" | "decodex" | "fiidii">("dashboard");
   const [fiiDiiLoading, setFiiDiiLoading] = useState<boolean>(false);
   const [fiiDiiData, setFiiDiiData] = useState<any>(null);
@@ -119,9 +129,26 @@ export default function App() {
         throw new Error("No trading data could be found for the selected dates. They might be weekend holidays or ahead of current date.");
       }
 
-      setScrapeResults(data);
+      // Merge incoming results with previous cached results if any, to guarantee 3 successful trading days
+      let finalResults = data;
+      if (successCount < 3) {
+        try {
+          const cached = localStorage.getItem("decodex_last_successful_scrape_results");
+          if (cached) {
+            const parsed = JSON.parse(cached) as DayScrapeResult[];
+            const map = new Map<string, DayScrapeResult>();
+            parsed.filter(r => r.status === "success").forEach(r => map.set(r.date, r));
+            data.forEach(r => map.set(r.date, r)); // incoming data overrides
+            finalResults = Array.from(map.values());
+          }
+        } catch (e) {
+          console.warn("Error merging cached results:", e);
+        }
+      }
+
+      setScrapeResults(finalResults);
       setIsShowingCachedData(false);
-      localStorage.setItem("decodex_last_successful_scrape_results", JSON.stringify(data));
+      localStorage.setItem("decodex_last_successful_scrape_results", JSON.stringify(finalResults));
       localStorage.setItem("decodex_last_successful_date_str", dateStr);
       setCachedDataDate(dateStr);
       
@@ -365,45 +392,128 @@ export default function App() {
     <div id="app-root" className="min-h-screen bg-gray-50/50 text-gray-800 font-sans antialiased flex flex-col selection:bg-indigo-100 selection:text-indigo-900">
       
       {/* Premium Header Nav */}
-      <header id="main-header" className="sticky top-0 z-40 bg-white/80 backdrop-blur-md border-b border-gray-100 px-6 py-4 flex items-center justify-between">
-        <div className="flex items-center gap-3.5">
+      <header id="main-header" className="sticky top-0 z-40 bg-white/80 backdrop-blur-md border-b border-gray-100 px-4 sm:px-6 py-3.5">
+        <div className="max-w-7xl mx-auto flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            {/* Hamburger Menu Button */}
+            <button
+              id="hamburger-menu-btn"
+              onClick={() => setIsHamburgerOpen(!isHamburgerOpen)}
+              className="p-2 text-gray-600 hover:text-gray-900 bg-gray-50 hover:bg-gray-100 border border-gray-200/80 rounded-xl transition-all cursor-pointer"
+              title="Toggle Navigation Menu"
+            >
+              {isHamburgerOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
+            </button>
+
+            <div 
+              onClick={() => { setMainNav("home"); setIsHamburgerOpen(false); }}
+              className="flex items-center gap-2.5 cursor-pointer"
+            >
+              <div className="h-9 w-9 rounded-xl bg-indigo-600 flex items-center justify-center text-white shadow-md shadow-indigo-200">
+                <Sparkles className="h-5 w-5" />
+              </div>
+              <div>
+                <h1 className="text-base font-bold font-display text-gray-900 tracking-tight">NSE F&O Analytics</h1>
+                <p className="text-[10px] font-medium text-indigo-600 uppercase tracking-widest">
+                  {mainNav === "home" ? "Participant-Wise Open Interest" : "Live Option Chain & Derivatives"}
+                </p>
+              </div>
+            </div>
+
+            {/* Desktop Navigation Links */}
+            <nav className="hidden md:flex items-center gap-1.5 ml-6 pl-6 border-l border-gray-200">
+              <button
+                id="nav-home-btn"
+                onClick={() => { setMainNav("home"); setIsHamburgerOpen(false); }}
+                className={`flex items-center gap-2 text-xs font-bold px-3.5 py-2 rounded-xl transition-all cursor-pointer ${
+                  mainNav === "home"
+                    ? "bg-indigo-600 text-white shadow-md shadow-indigo-100"
+                    : "text-gray-600 hover:bg-gray-100 hover:text-gray-900"
+                }`}
+              >
+                <Home className="h-4 w-4" />
+                Home
+              </button>
+              <button
+                id="nav-option-chain-btn"
+                onClick={() => { setMainNav("option-chain"); setIsHamburgerOpen(false); }}
+                className={`flex items-center gap-2 text-xs font-bold px-3.5 py-2 rounded-xl transition-all cursor-pointer ${
+                  mainNav === "option-chain"
+                    ? "bg-indigo-600 text-white shadow-md shadow-indigo-100"
+                    : "text-gray-600 hover:bg-gray-100 hover:text-gray-900"
+                }`}
+              >
+                <Layers className="h-4 w-4" />
+                Option Chain
+              </button>
+            </nav>
+          </div>
+
           <div className="flex items-center gap-2.5">
-            <div className="h-9 w-9 rounded-xl bg-indigo-600 flex items-center justify-center text-white shadow-md shadow-indigo-200">
-              <Sparkles className="h-5 w-5" />
+            <div className="hidden sm:flex items-center gap-2 px-3 py-1.5 bg-emerald-50 border border-emerald-100 rounded-xl text-xs text-emerald-800 font-medium">
+              <span className="relative flex h-2 w-2">
+                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
+              </span>
+              <span>Auto-Fetch Active</span>
             </div>
-            <div>
-              <h1 className="text-base font-bold font-display text-gray-900 tracking-tight">NSE F&O Analytics</h1>
-              <p className="text-[10px] font-medium text-indigo-600 uppercase tracking-widest">
-                Participant-Wise Open Interest
-              </p>
-            </div>
+
+            <button
+              id="open-uploader-btn"
+              onClick={() => setIsUploaderOpen(true)}
+              className="flex items-center gap-2 text-xs font-semibold text-gray-700 bg-white border border-gray-200 hover:bg-gray-50 hover:border-gray-300 px-3.5 py-2 rounded-xl transition-all shadow-xs cursor-pointer"
+            >
+              <FileUp className="h-4 w-4 text-gray-400" /> <span className="hidden sm:inline">Manual Upload Fallback</span>
+            </button>
           </div>
         </div>
 
-        <div className="flex items-center gap-3">
-          <div className="hidden sm:flex items-center gap-2 px-3 py-1.5 bg-emerald-50 border border-emerald-100 rounded-xl text-xs text-emerald-800 font-medium">
-            <span className="relative flex h-2 w-2">
-              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
-              <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
-            </span>
-            <span>Auto-Fetch Active</span>
-            <span className="text-emerald-600/70 text-[10px]">(10:30 PM IST Daily)</span>
-          </div>
+        {/* Hamburger Mobile/Expanded Dropdown Menu */}
+        {isHamburgerOpen && (
+          <div className="mt-3 pt-3 border-t border-gray-100 max-w-7xl mx-auto flex flex-col gap-1.5 animate-fade-in">
+            <button
+              id="hamburger-nav-home"
+              onClick={() => { setMainNav("home"); setIsHamburgerOpen(false); }}
+              className={`flex items-center justify-between p-3 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+                mainNav === "home"
+                  ? "bg-indigo-50 text-indigo-700 border border-indigo-100"
+                  : "bg-gray-50 hover:bg-gray-100 text-gray-700"
+              }`}
+            >
+              <div className="flex items-center gap-3">
+                <Home className="h-4 w-4 text-indigo-600" />
+                <span>Home (Participant OI & FII/DII Analytics)</span>
+              </div>
+              {mainNav === "home" && <span className="text-[10px] bg-indigo-600 text-white px-2 py-0.5 rounded-full font-semibold">Active</span>}
+            </button>
 
-          <button
-            id="open-uploader-btn"
-            onClick={() => setIsUploaderOpen(true)}
-            className="flex items-center gap-2 text-xs font-semibold text-gray-700 bg-white border border-gray-200 hover:bg-gray-50 hover:border-gray-300 px-3.5 py-2.5 rounded-xl transition-all shadow-sm cursor-pointer"
-          >
-            <FileUp className="h-4 w-4 text-gray-400" /> Manual Upload Fallback
-          </button>
-        </div>
+            <button
+              id="hamburger-nav-option-chain"
+              onClick={() => { setMainNav("option-chain"); setIsHamburgerOpen(false); }}
+              className={`flex items-center justify-between p-3 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+                mainNav === "option-chain"
+                  ? "bg-indigo-50 text-indigo-700 border border-indigo-100"
+                  : "bg-gray-50 hover:bg-gray-100 text-gray-700"
+              }`}
+            >
+              <div className="flex items-center gap-3">
+                <Layers className="h-4 w-4 text-indigo-600" />
+                <span>Option Chain (Live Derivatives Stream)</span>
+              </div>
+              {mainNav === "option-chain" && <span className="text-[10px] bg-indigo-600 text-white px-2 py-0.5 rounded-full font-semibold">Active</span>}
+            </button>
+          </div>
+        )}
       </header>
 
       {/* Main Workspace Grid */}
-      <main id="main-content" className="max-w-7xl w-full mx-auto p-6 space-y-6 flex-1">
+      <main id="main-content" className="max-w-7xl w-full mx-auto p-4 sm:p-6 space-y-6 flex-1">
         
-        {/* Bento Grid Top bar: Date Picker + Quick explanation */}
+        {mainNav === "option-chain" ? (
+          <OptionChain />
+        ) : (
+          <>
+            {/* Bento Grid Top bar: Date Picker + Quick explanation */}
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           
           {/* Calendar Picker Box */}
@@ -728,6 +838,7 @@ export default function App() {
                   setSelectedDateStr={setSelectedDateStr}
                   triggerScrape={triggerScrape}
                   isLoading={isLoading}
+                  onOpenUploader={() => setIsUploaderOpen(true)}
                 />
               </div>
             ) : (
@@ -736,15 +847,67 @@ export default function App() {
 
           </div>
         )}
+          </>
+        )}
 
       </main>
 
       {/* FOOTER */}
-      <footer id="main-footer" className="bg-white border-t border-gray-100 mt-12 py-6 px-8 flex flex-col md:flex-row items-center justify-between text-xs text-gray-400 gap-4">
-        <p>© 2026 NSE Data Scraper. Real-time archives fetching powered by residential proxies & TypeScript. Data remains unchanged from NSE servers.</p>
-        <div className="flex items-center gap-6">
-          <span className="flex items-center gap-1.5"><div className="h-2 w-2 rounded-full bg-emerald-500" /> Server Connected</span>
-          <span className="flex items-center gap-1.5"><div className="h-2 w-2 rounded-full bg-indigo-500" /> Dual-Mode Resilient Pipeline</span>
+      <footer id="main-footer" className="bg-white border-t border-gray-100 mt-12 py-8 px-6 sm:px-8 text-xs text-gray-500">
+        <div className="max-w-7xl mx-auto space-y-6">
+          <div className="flex flex-col lg:flex-row items-start lg:items-center justify-between gap-6 border-b border-gray-100 pb-6">
+            <div className="flex items-center gap-3">
+              <div className="h-9 w-9 rounded-xl bg-indigo-600 flex items-center justify-center text-white font-bold font-display shadow-sm">
+                DX
+              </div>
+              <div>
+                <h3 className="font-bold text-gray-900 text-sm font-display">NSE F&O Analytics & DecodeXMarket</h3>
+                <p className="text-[11px] text-gray-400">Institutional Open Interest & Participant Derivatives Intelligence</p>
+              </div>
+            </div>
+
+            {/* Founder & Contact Details */}
+            <div className="flex flex-wrap items-center gap-3 text-xs bg-gray-50 border border-gray-200/80 p-2.5 rounded-xl">
+              <div className="flex items-center gap-2 pr-3 border-r border-gray-200 text-gray-800 font-medium">
+                <User className="h-3.5 w-3.5 text-indigo-600" />
+                <span><strong className="font-semibold text-gray-950">Ravi Shankar Sharma</strong> <span className="text-gray-500 text-[11px]">(Founder)</span></span>
+              </div>
+              <a 
+                href="https://wa.me/918271890090" 
+                target="_blank" 
+                rel="noreferrer"
+                className="flex items-center gap-1.5 text-emerald-700 hover:text-emerald-800 bg-emerald-50 hover:bg-emerald-100/80 px-2.5 py-1 rounded-lg border border-emerald-200/60 font-medium transition-colors"
+              >
+                <Phone className="h-3.5 w-3.5 text-emerald-600" />
+                <span>WhatsApp: <strong>8271890090</strong></span>
+              </a>
+              <a 
+                href="mailto:rk867000@gmail.com"
+                className="flex items-center gap-1.5 text-indigo-700 hover:text-indigo-800 bg-indigo-50 hover:bg-indigo-100/80 px-2.5 py-1 rounded-lg border border-indigo-200/60 font-medium transition-colors"
+              >
+                <Mail className="h-3.5 w-3.5 text-indigo-600" />
+                <span>Email: <strong>rk867000@gmail.com</strong></span>
+              </a>
+            </div>
+
+            <div className="flex flex-wrap items-center gap-3 text-[11px] text-gray-500 font-medium">
+              <span className="flex items-center gap-1.5 bg-emerald-50 text-emerald-700 px-2.5 py-1 rounded-lg border border-emerald-100">
+                <span className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse" /> NSE Pipeline Active
+              </span>
+              <span className="flex items-center gap-1.5 bg-indigo-50 text-indigo-700 px-2.5 py-1 rounded-lg border border-indigo-100">
+                <Clock className="h-3 w-3 text-indigo-500" /> Daily Auto-Fetch: 10:30 PM IST
+              </span>
+            </div>
+          </div>
+
+          <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4 text-[11px] text-gray-400">
+            <p className="leading-relaxed max-w-3xl">
+              <strong className="text-gray-600 font-semibold">Disclaimer:</strong> This application parses official public data archives published by the National Stock Exchange of India (NSE). It is intended strictly for educational and analytical visualization purposes and does not constitute financial, investment, or SEBI-registered advisory services.
+            </p>
+            <p className="shrink-0 font-mono text-[10px]">
+              © {new Date().getFullYear()} DecodeXMarket Analytics. All rights reserved.
+            </p>
+          </div>
         </div>
       </footer>
 
