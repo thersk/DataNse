@@ -1,0 +1,112 @@
+o
+�&aj�\�@s@ddlZddlZddlZddlZddlZddlZddlZddl	m	Z	m
+Z
+gd�Zddd�Zddd�Zd	d
+�Zdd�Zdd�Zdd�Zddd�Zddd�Zedkr�dZdZeeej��D]2Zejedkrvedeej�krvejed��Zejedkr�edeej�kr�ejedZq[eee�Zeejedd��dSdS)�N)�datetime�	timedelta��NIFTY�	BANKNIFTY�FINNIFTY�
+MIDCPNIFTYrcs�t��}hd���fdd�}dd�}g}|dvr`|dkrdnd	}|j}|j}td
+�D]4}||}	|}
+|	dkrF|
+|	d	d7}
+|	d	dd	}	||
+|	|�}||�}|�d�}||vr^|�|�q*ngd�}zttt	|��dd�d�}W|St
+y}Y|Sw)N>�01-May-2026�02-Apr-2026�02-Oct-2026�03-Apr-2026�06-Mar-2026�14-Apr-2026�19-Oct-2026�23-Nov-2026�25-Dec-2026�26-Jan-2026�27-Mar-2026�29-Jul-2026csF	|��dvr|tdd�8}q|�d�}|�vr |tdd�8}q	|S)NT)�����days�%d-%b-%Y)�weekdayr�strftime)�date_obj�date_str��TRADING_HOLIDAYS_2026��&/app/applet/scrape_nse_option_chain.py�adjust_for_holidayss
+z2get_fallback_expiries.<locals>.adjust_for_holidayscSsNddl}|�||�\}}t|||�}|��|kr%|tdd�8}|��|ks|S)Nrrr)�calendar�
+monthrangerrr)�year�monthrr$�_�last_day�dr!r!r"�get_last_weekday_of_month,s�z8get_fallback_expiries.<locals>.get_last_weekday_of_month)rrr�rr�r)�28-Jul-2026z06-Aug-2026z13-Aug-2026z20-Aug-2026z27-Aug-2026z24-Sep-2026cSst�|d�S)Nr)r�strptime��xr!r!r"�<lambda>Q�z'get_fallback_expiries.<locals>.<lambda>��key)r�nowr&r'�ranger�append�sorted�list�set�	Exception)�symbol�todayr#r+�expiries�target_weekday�current_year�current_month�i�m�y�last_day_date�adjusted_date�exp_strr!rr"�get_fallback_expiriess<
+
+����rIc)Cs0t|�}|r
+||vr|d}dddddddd	d
+dd�
+}|�|d�}zt�|d�}td|t��jd�}Wnty@d}Ynw|dd}|dkrRd}d}	d}
+nB|dkr]d}d}	d}
+n7|dkrhd}d}	d}
+n,|dkrsd}d }	d!}
+n!|d"kr~d#}d$}	d%}
+nd}t|dd�d&}	t|dd�d&}
+d'd(�}|d)}g}t	|	|
+d|�D�]�}||}|dk�rt
+|�}|d*|d+t
+|�|d,}|||�}td-d+d+t
+|�|d.�}t|d/�}t|d0�}t
+|�|d0kr�td1|d2t
+|�|d3�nd}nR|d*|d+t
+|�|d4d5}||�}td6|d+t
+||d7�|dd8�}t|d9�}t|d:�}t
+|�|d8k�rRtd1|d;t
+|�|d3�nd}||}|dk�r�t
+|�}|d*|d+t
+|�|d,}|||�}td<d+d+t
+|�|d.�}t|d=�}t|d,�}t
+|�|d0k�r�td>|d?t
+|�|d3�nd}nR|d*|d+t
+|�|d4d5}||�}td@|d+t
+||dA�|dBd8�}t|dC�}t|dD�}t
+|�|d8k�r�td>|d.t
+|�|d3�nd}|tdE|tdE|dF���}|tdE|tdE|dF���} ttd|dGd���p)d}!ttd|dHd���p7d}"|tdE|tdE|dF���}#|tdE|tdE|dF���}$ttd|dGd���pad}%ttd|dHd���pod}&|dk�r�|dk�r�|dIk�r�dJ}dK}d}d}dL}dM}'dN}!dO}dP} dN}"dQ}%dR}#dS}$dQ}&dT}(dR}dU}dV}dW}dX}|�||idY|�dZ|�d[|�d\|�d]|�d^d_�d`|�da|�db|�dc|dk�r�||dd�n|'�de|dk�r�tdfd3�nt|'td+|�dd3��dg|!�dh|dk�r�|nd�di| dk�r| nd�dj|"�dk|!dl�dm|"dl�dn|i�idY|�dZ|�d[|�d\|�d]|�d^d_�d`|�da|�db|�dc|dk�r<||do�n|(�de|dk�rItdpd3�nt|(td+|�dd3��dg|%dk�r]|%nd�dh|#dk�rg|#nd�di|$dk�rq|$nd�dj|&�dk|%dl�dm|&dl�dn|i�dq��q�drds||t���dt�||du�S)vNr�o�@��z�@����̌��@�33333��@gM�@g����L�@g�����q�@g33333��@gfffff8�@g����̔�@)
+rrrr�RELIANCE�TCS�INFY�HDFCBANK�	ICICIBANK�SBINg��@rrrg@g�?r�2ilRiXfr�di��i��ri�Si�ar�i�*i�4rN�i�
+iHi cSstt|d�dd�S)N皙�����?r,)�round)�valr!r!r"�
+round_tick�sz%get_fallback_data.<locals>.round_tick�
+g����Mb�?g�?g333333�?i�.g������@g{�G�z��g�?g&@g@r,g�������?g�������?i��g333333�?g@g{�G�z�?g@g@i�6g���Q���g(@g������	@i�"g�������?g333333�?g�������?g������@rXg�~j�t�x?i,��r.i@i����gv�@gfffffNi��Ag�����W�@g�������@i�g�������?g333333�?g������ٿgH�z�'B@ii\i8��strikePrice�
+expiryDate�
+underlying�openInterest�changeinOpenInterest�pchangeinOpenInterest��totalTradedVolume�impliedVolatility�	lastPrice�changeg����Mb`��pChangeg������ɿ�bidQty�bidprice�askPrice�askQty�totalBuyQuantity��totalSellQuantity�underlyingValueg�~j�t�h�g333333ӿ�r_r`�CE�PE�success�fallback_core�%d-%b-%Y 15:30:00 IST��status�sourcer=rr�	timestampr?�data)rI�getrr/�maxr6rr<�intr7�absrYr8r))r=�expiryr?�spot_prices�spot�exp_dt�days_to_exp�dte_mult�strike_step�
+min_strike�
+max_striker[�scale�strikes�
+strike_val�
+dist_calls�intrinsic_call�time_val_call�ltp_call�oi_call�chg_oi_call�volume_call�iv_call�	dist_puts�intrinsic_put�time_val_put�ltp_put�oi_put�
+chg_oi_put�
+volume_put�iv_put�bid_call�ask_call�bid_qty_call�ask_qty_call�bid_put�ask_put�bid_qty_put�ask_qty_put�chg_call�chg_putr!r!r"�get_fallback_dataWs���
+  4$,4
+  6$,4��������	�
+�,����������������	�
+�,��������
+�.�r�cCs�|sdSt�d|�r|Sddddddd	d
+ddddd�}|�d�}t|�dkrR|d�d�}|�|dd	�}t|d�dkrDd|d��n|d}|�d|�d|��SdS)Nz
+2026-07-28z^\d{4}-\d{2}-\d{2}$�01�02�03�04�05�06�07�08�09�10�11�12��Jan�Feb�Mar�Apr�May�Jun�Jul�Aug�Sep�Oct�Nov�Dec�-�rr,r�20)�re�match�split�len�zfillr~)rH�months�parts�dayr'r&r!r!r"�convert_expiry_to_yyyymmdds�
+&r�cCs�|sdSgd�}|�d�}t|�dkrB|d}t|d�d}|d�d�}d|kr0dkr6nn||nd	}|�d|�d|��S|S)
+Nr.r�r�r�rrr,r-r�)r�r�r�r�)rr�r�r&�	month_idxr��	month_strr!r!r"�convert_yyyymmdd_to_expiry_str+s
+$r�cCsv|r
+|dks
+|dkrdSt�dd|��dd���}d|vr&|�d�d��}zd|vr0t|�WSt|�WSYdS)	Nr��nullr�<[^>]+>��,�(�.)r��sub�replace�stripr��floatr�)�val_str�cleanr!r!r"�	parse_num8s
+
+r�cCs�|r
+|dks
+|dkrdSt�dd|���}t�d|�}|r=zt|�d��dd��}t|�d	��dd��}||fWSYzt|�dd��}|d
+fWSYdS)Nr�r�)rerer�r�z([-\d\.,]+)\s*\(([-\d\.,]+)%\)rr�r,re)r�r�r��searchr��groupr�)r�r�r��chg�pchgrZr!r!r"�parse_chg_pairEs 
+
+r�c)
+Cst|�}d|�d|��}tj��}tj�tj�|��}gd�|_�z�|j	ddd��Wd�n1s4wY|j	|dd��}|�
+�jdd	d
+�}Wd�n1sTwYt�d|�}dd�|D�}	|	rodd�|	D�ndg}
+t|�}t�d|tj�}g}ddddd�}|�|d�}|D]�}d|vs�d|vs�d|vs�d|v�rmt�d|tj�}dd�|D�}t|�dk�rmt|d�}t|d�}t|d�}t|d �\}}t|d�}t|d!�}t|d"�}t|d#�\}}t|d�}t|d$�}t|d%�}|dk�rm|�||id&|�d'|�d(|�d)|�d*|�d+d,�d-|�d.d�d/|�d0|�d1|�d2d�d3d�d4d�d5d�d6|�id&|�d'|�d(|�d)|�d*|�d+d,�d-|�d.d�d/|�d0|�d1|�d2d�d3d�d4d�d5d�d6|�d7��q�|�r�g} |D]0}|d8d/}!|d9d/}"|d&}#|!dk�r�|"dk�r�t|!|"�}$|#|!|"}%| �|$|%f��qu| �r�| jd:d;�d<�| dtd t| ���}&ttd=d>�|&D��t|&�d�}'|'}|D]}||d8d6<||d9d6<�q�d?d@||t���dA�|
+|dB�WSWdSt�y}(zWYd}(~(dSd}(~(ww)CNz;https://www.moneycontrol.com/indices/fno/view-option-chain/�/))�
+User-AgentzuMozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0.0.0 Safari/537.36)�AcceptzUtext/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8�zAccept-Languagezen-US,en;q=0.9)�Referer�https://www.moneycontrol.com/)z	Sec-Ch-Uaz'"Not/A)Brand";v="8", "Chromium";v="126")zSec-Ch-Ua-Mobilez?0)zSec-Ch-Ua-Platformz"macOS")zSec-Fetch-Dest�document)zSec-Fetch-Mode�navigate)zSec-Fetch-Sitezsame-origin)zSec-Fetch-Userz?1)zUpgrade-Insecure-Requests�1r�rp��timeout��utf-8�ignore)�errorsz:<option[^>]*value=\"(\d{4}-\d{2}-\d{2})\">([^<]+)</option>cSsg|]}|d�qS)rr!)�.0rDr!r!r"�
+<listcomp>s�z4scrape_moneycontrol_option_chain.<locals>.<listcomp>cSsg|]}t|��qSr!)r�)r�r1r!r!r"r�tr�r.z<tr[^>]*>(.*?)</tr>rJrKrLrMr�origin�strikeprice�	calls_cls�puts_ltpz<td[^>]*>(.*?)</td>cSsg|]}t�dd|����qS)r�� )r�r�r�)r��tdr!r!r"r��s�rrr,r�rr��	r\r_r`rarbrcrdrerfrgrhrirjrkrlrmrnrrrsrtrucSs|dS)Nrr!r0r!r!r"r2�sz2scrape_moneycontrol_option_chain.<locals>.<lambda>r4css�|]}|dVqdS)rNr!)r��pr!r!r"�	<genexpr>�s�z3scrape_moneycontrol_option_chain.<locals>.<genexpr>rv�moneycontrol_scrapedrxry)r��http�	cookiejar�	CookieJar�urllib�request�build_opener�HTTPCookieProcessor�
+addheaders�open�read�decoder��findallr��DOTALLr~r�r�r�r8r��sort�minrY�sumrr6rr<))r=r��yyyymmdd�url�cj�opener�resp�html�exp_matches�mc_expiries�formatted_expiries�current_exp_str�rows�records�default_spots�spot_val�r�tds�	clean_tds�c_oi�c_oi_chg�c_vol�c_chg�c_pchg�c_ltp�strike�p_ltp�p_chg�p_pchg�p_vol�p_oi_chg�p_oi�valid_pairs�c_p�p_p�stk�diff�implied�	top_pairs�calculated_spot�er!r!r"� scrape_moneycontrol_option_chainWs
+
+.�"
+��������	�
+���������������	�
+���������#� ��#�
+��r8c	s�t|��}|r|�d�r|Sd|���d�}tj�|�r�zbt|d��S}t�|�}|�di��dg�}�s:|r:|d��fdd	�|�di��dg�D�}t	|d
+d�d�}dd||�di��dd�|�di��dd�||d�Wd�WS1sxwYWn	t
+y�Ynw|tv}|dkr�d}	d}
+n(|dkr�d}	d}
+n|dkr�d}	d}
+n|dkr�d}	d}
+nd |�d!|��}	d"|��}
+tj��}tj�tj�|��}d#d$d%d&|	fd'g}||_z�|j|	d(d)�|j|
+d(d)��k}|jd*k�rKt�|���d+��}|�di��dd�}|�di��dd�}|�di��dg�}��s |�r |d��fd,d	�|�di��dg�D�}t	|d-d�d�}dd.|||||d�Wd�WSWd�n	1�sVwYWn
+t
+�yfYnwt|��S)/Nr}zdata/option_chain_z.jsonrr�expiryDatesrc�"g|]}�r|�d��kr|�qS�r`�r~�r�r�r�r!r"r�����z+scrape_nse_option_chain.<locals>.<listcomp>cS�|�dd�S�Nr_rr<r0r!r!r"r2�r3z)scrape_nse_option_chain.<locals>.<lambda>r4rv�user_cached_jsonrrrer|r�ryrz=https://www.nseindia.com/get-quote/optionchain/NIFTY/NIFTY-50z>https://www.nseindia.com/api/option-chain-indices?symbol=NIFTYrzChttps://www.nseindia.com/get-quote/optionchain/BANKNIFTY/NIFTY-BANKzBhttps://www.nseindia.com/api/option-chain-indices?symbol=BANKNIFTYrzIhttps://www.nseindia.com/get-quote/optionchain/FINNIFTY/NIFTY-FIN-SERVICEzAhttps://www.nseindia.com/api/option-chain-indices?symbol=FINNIFTYrzJhttps://www.nseindia.com/get-quote/optionchain/MIDCPNIFTY/NIFTY-MID-SELECTzChttps://www.nseindia.com/api/option-chain-indices?symbol=MIDCPNIFTYz/https://www.nseindia.com/get-quote/optionchain/r�z:https://www.nseindia.com/api/option-chain-equities?symbol=)r�zoMozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0.0.0 Safari/537.36)r�z*/*r�r�)zX-Requested-With�XMLHttpRequestrr���r�cr:r;r<r=r>r!r"r�%r?cSr@rAr<r0r!r!r"r2)r3�nse_live_api)r8r~�lower�os�path�existsr	�json�loadr9r<�INDEX_SYMBOLSrrrrrrrrrz�loadsr
+rr�)r=r��	mc_result�cached_file�f�cached_datar?r�is_index�referer_urlrrr�headers�response�raw_data�underlying_valr|�all_expiries�option_chain_recordsr!r>r"�scrape_nse_option_chain�s�
+
+
+��&��
+
+�
+������
+rZ�__main__z--symbolrz--expiryr,)�indent)r)N)rN)�sysrJ�urllib.requestr�urllib.error�http.cookiejarrr�rGrrrLrIr�r�r�r�r�r8rZ�__name__r=r�r7r��argvrC�upper�result�print�dumpsr!r!r!r"�<module>s>
+
+KD
+
+a  �
+�
