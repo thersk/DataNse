@@ -136,6 +136,32 @@ async function startServer() {
     });
   });
 
+  // Endpoint to upload raw NSE Option Chain JSON directly
+  app.post("/api/option-chain-upload", (req, res) => {
+    const { symbol, jsonContent } = req.body;
+    
+    if (!symbol || !jsonContent) {
+      res.status(400).json({ error: "Missing required parameters: symbol or jsonContent" });
+      return;
+    }
+
+    const cleanSymbol = symbol.trim().toLowerCase();
+    const cache_path = path.join("data", `option_chain_${cleanSymbol}.json`);
+
+    try {
+      let parsedJson = jsonContent;
+      if (typeof jsonContent === "string") {
+        parsedJson = JSON.parse(jsonContent);
+      }
+      fs.writeFileSync(cache_path, JSON.stringify(parsedJson, null, 2), "utf-8");
+      console.log(`[API] Successfully cached option chain JSON for ${cleanSymbol}`);
+      res.json({ status: "success", message: `Option chain cached for ${cleanSymbol.toUpperCase()}` });
+    } catch (e: any) {
+      console.error(`[API Error] Failed to save option chain JSON:`, e);
+      res.status(500).json({ error: "Failed to parse/save option chain JSON.", details: e.message });
+    }
+  });
+
   // Endpoint to upload and cache CSV content manually
   app.post("/api/cache-upload", (req, res) => {
     const { date, csvContent } = req.body;
